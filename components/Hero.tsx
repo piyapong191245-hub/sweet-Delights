@@ -10,7 +10,7 @@ export default function Hero() {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           <div className="space-y-6 text-center md:text-left">
             <span className="inline-block px-4 py-1.5 rounded-full bg-stone-200 text-amber-800 text-sm font-semibold tracking-wide">
-              ✨ ขนบอบสดใหม่จากเตาทุกวัน
+              ✨ ขนมอบสดใหม่จากเตาทุกวัน
             </span>
 
             {/* เพิ่ม leading-[1.5] และ pb-2 เพื่อขยายระยะห่างระหว่างบรรทัดให้สระไม่ชนกัน */}

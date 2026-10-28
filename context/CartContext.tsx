@@ -52,6 +52,7 @@ interface CartContextValue {
   setDeliveryType: (type: DeliveryType) => void;
   addToCart: (product: Product) => void;
   updateQuantity: (productId: number, change: number) => void;
+  clearCart: () => void;
   placeOrder: (
     info: Omit<
       Order,
@@ -114,6 +115,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
     );
   }, []);
 
+  const clearCart = useCallback(() => {
+    setCart([]);
+    setNote("");
+  }, []);
+
   const totalItems = useMemo(
     () => cart.reduce((sum, i) => sum + i.quantity, 0),
     [cart],
@@ -161,6 +167,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     setDeliveryType,
     addToCart,
     updateQuantity,
+    clearCart,
     placeOrder,
     cartOpen,
     checkoutOpen,

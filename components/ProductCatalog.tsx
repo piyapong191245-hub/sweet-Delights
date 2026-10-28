@@ -1,14 +1,71 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { categories, products, type CategoryId } from "@/data/products";
 import { useCart } from "@/context/CartContext";
+import { supabase } from "@/lib/supabase";
+
+export type CategoryId = "all" | "wafer" | "peep" | "pineapple";
+
+export interface Category {
+  id: CategoryId;
+  name: string;
+  icon: string;
+}
+
+export interface Product {
+  id: number;
+  name: string;
+  category: CategoryId;
+  price: number;
+  tag: string;
+  tagColor: string;
+  image: string;
+  description: string;
+}
 
 export default function ProductCatalog() {
   const { addToCart } = useCart();
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [currentCategory, setCurrentCategory] = useState<CategoryId>("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  // ดึงข้อมูล Categories และ Products จาก Supabase
+  useEffect(() => {
+    async function fetchData() {
+      setLoading(true);
+
+      const [catRes, prodRes] = await Promise.all([
+        supabase.from("categories").select("*"),
+        supabase.from("products").select("*"),
+      ]);
+
+      if (catRes.data) {
+        setCategories(catRes.data as Category[]);
+      }
+
+      if (prodRes.data) {
+        // Mapped tag_color จาก Supabase (snake_case) ให้กลายเป็น tagColor (camelCase)
+        const formattedProducts: Product[] = prodRes.data.map((item) => ({
+          id: item.id,
+          name: item.name,
+          category: item.category as CategoryId,
+          price: Number(item.price),
+          tag: item.tag || "",
+          tagColor: item.tag_color || "bg-amber-500",
+          image: item.image,
+          description: item.description || "",
+        }));
+        setProducts(formattedProducts);
+      }
+
+      setLoading(false);
+    }
+
+    fetchData();
+  }, []);
 
   const filtered = useMemo(() => {
     const q = searchQuery.toLowerCase().trim();
@@ -20,12 +77,21 @@ export default function ProductCatalog() {
         p.description.toLowerCase().includes(q);
       return matchesCategory && matchesSearch;
     });
-  }, [currentCategory, searchQuery]);
+  }, [products, currentCategory, searchQuery]);
 
   const resetFilters = () => {
     setCurrentCategory("all");
     setSearchQuery("");
   };
+
+  if (loading) {
+    return (
+      <section className="py-20 text-center">
+        <i className="fa-solid fa-spinner fa-spin text-4xl text-amber-700 mb-4"></i>
+        <p className="text-gray-500 font-medium">กำลังโหลดข้อมูลขนมจากระบบ...</p>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -88,11 +154,13 @@ export default function ProductCatalog() {
                   sizes="(min-width: 1280px) 25vw, (min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
                   className="object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <span
-                  className={`absolute top-3 left-3 ${p.tagColor} text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow`}
-                >
-                  {p.tag}
-                </span>
+                {p.tag && (
+                  <span
+                    className={`absolute top-3 left-3 ${p.tagColor} text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow`}
+                  >
+                    {p.tag}
+                  </span>
+                )}
               </div>
 
               <div className="p-5 flex-grow flex flex-col justify-between">
